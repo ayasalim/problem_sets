@@ -52,6 +52,20 @@ d <- read_sav('data/Empathy Gap Study 1 data.sav')
 
 ```{r}
 
+# viewing data
+names(d)
+head(d)
+attributes(d$condition)
+attributes(d$exchangeinfo)
+
+# quicker labeling bc of haven
+d_clean <- d %>%
+  dplyr:: select(ID, condition, exchangeinfo) %>%
+  filter(!is.na(condition), !is.na(exchangeinfo)) %>%
+  mutate(condition = haven::as_factor(condition), exchangeinfo = haven::as_factor(exchangeinfo))
+
+head(d_clean)
+dplyr::count(d_clean, condition, exchangeinfo)
 ```
 
 # Step 4: Run analysis
@@ -62,6 +76,12 @@ d <- read_sav('data/Empathy Gap Study 1 data.sav')
 
 ```{r}
 # reproduce the above results here
+
+tab <- table(d_clean$condition, d_clean$exchangeinfo)
+tab
+addmargins(tab)
+
+round(prop.table(tab, 1) * 100, 2)
 
 ```
 
@@ -74,20 +94,22 @@ Hint: if you are using the function chisq.test(), make sure to set the continuit
 ```{r}
 # reproduce the above results here
 
+chisq_result <- chisq.test(tab, correct = FALSE)
+chisq_result
+
 ```
 
 # Step 5: Reflection
 
 Were you able to reproduce the results you attempted to reproduce? If not, what part(s) were you unable to reproduce?
 
-> ANSWER HERE
+> Yes, I was able to reproduce the results.
 
 How difficult was it to reproduce your results? 
 
-> ANSWER HERE
+> It was fairly simple to reproduce the results given that it was a simpler analysis/data cleaned well.
 
 What aspects made it difficult? What aspects made it easy?
 
-> ANSWER HERE
-
+> The difficult aspect was understanding how the original/raw data was set up (what each of the columns mean, etc.), but this was also made more simple since it was cleanly labelled/identified for us. 
 

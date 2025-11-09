@@ -39,8 +39,8 @@ library(haven) # import and export 'SPSS', 'Stata' and 'SAS' Files
 library(readxl) # import excel files
 
 # #optional packages/functions:
-# library(afex) # anova functions
-# library(ez) # anova functions 2
+library(afex) # anova functions
+library(ez) # anova functions 2
 # library(scales) # for plotting
 # std.err <- function(x) sd(x)/sqrt(length(x)) # standard error
 ```
@@ -49,13 +49,25 @@ library(readxl) # import excel files
 
 ```{r}
 # Just Experiment 2
-data_path <- 'data/DeLaFuenteEtAl_2014_RawData.xls'
+data_path <- '/Users/as4508/Documents/GitHub/problem_sets/ps3/Group B/Choice 3/data/DeLaFuenteEtAl_2014_RawData-OSF-corrected_EHedit.xls'
 d <- read_excel(data_path, sheet=3)
 ```
 
 # Step 3: Tidy data
 
 ```{r}
+
+names(d)
+head(d)
+
+d_tidy <- d %>%
+  mutate(agreement = `Agreement (0=complete disagreement; 5=complete agreement)`,
+         group = factor(group, levels = c("young Spaniard", "Moroccan")),
+         subscale = factor(subscale, levels = c("PAST", "FUTURE")),
+         participant = factor(participant),
+         id = interaction(group, participant, drop = TRUE))
+
+head(d_tidy)
 
 ```
 
@@ -65,6 +77,20 @@ d <- read_excel(data_path, sheet=3)
 
 ```{r}
 
+se <- function(x) sd(x, na.rm = TRUE) / sqrt(sum(!is.na(x)))
+
+d_subject <- d_tidy %>%
+  group_by(group, participant, subscale) %>%
+  summarise(mean_agreement = mean(agreement),
+            se = se(agreement),
+            .groups = "drop")
+
+d_group <- d_tidy %>%
+  group_by(group, subscale) %>%
+  summarise(mean_agreement = mean(agreement),
+            se = se(agreement),
+            .groups = "drop")
+
 ```
 
 ## Descriptive statistics
@@ -72,6 +98,21 @@ d <- read_excel(data_path, sheet=3)
 Try to recreate Figure 2 (fig2.png, also included in the same folder as this Rmd file):
 
 ```{r}
+
+knitr::kable(d_group, digits = 2)
+
+ggplot(d_group, aes(x = group, y = mean_agreement, fill = subscale)) +
+  geom_col(position = position_dodge(width = 0.6), width = 0.6) +
+  geom_errorbar(aes(ymin = mean_agreement - se, ymax = mean_agreement + se), 
+                width = 0.15,
+                position = position_dodge(width = 0.6)) +
+  scale_x_discrete(labels = c("Moroccan" = "Moroccans", "young Spaniard" = "Spaniards"),) +
+  scale_fill_manual(values = c("grey40", "grey80"),
+                    labels = c("FUTURE" = "Future-Focused Statements", "PAST" = "Past-Focused Statements")) + 
+  coord_cartesian(ylim = c(2, 4)) +
+  labs(x = "Group", y = "Rating", fill = "Temporal focus") +
+  theme_minimal() +
+  theme(legend.position   = "top", legend.direction  = "horizontal", panel.grid.minor  = element_blank())
 
 ```
 
@@ -82,12 +123,38 @@ Try to recreate Figure 2 (fig2.png, also included in the same folder as this Rmd
 ```{r}
 # reproduce the above results here
 
+anova <- aov_ez(id = "id",
+                    dv = "agreement",
+                    between = "group",
+                    within = "subscale",
+                    data = d_tidy,
+                    fun_aggregate = mean)
+
+anova
+
+anova_results <- ezANOVA(data = d_tidy,
+                         dv = agreement,
+                         wid = id,
+                         within = subscale,
+                         between = group,
+                         detailed = TRUE,
+                         type = 3)
+
+anova_results
+
+partial_eta2 <- anova_results$ANOVA
+partial_eta2 <- partial_eta %>% mutate(partial_eta2 = SSn / (SSn + SSd))
+partial_eta2
+
 ```
 
 > Moroccans showed greater agreement with past-focused statements than Spaniards did, t(78) = 4.04, p = .001, 
 
 ```{r}
 # reproduce the above results here
+
+past <- filter(d_subject, subscale == "PAST")
+t.test(mean_agreement ~ relevel(group, ref = "Moroccan"), data = past, var.equal = TRUE)
 
 ```
 
@@ -96,18 +163,21 @@ Try to recreate Figure 2 (fig2.png, also included in the same folder as this Rmd
 ```{r}
 # reproduce the above results here
 
+future <- filter(d_subject, subscale == "FUTURE")
+t.test(mean_agreement ~ relevel(group, ref = "Moroccan"), data = future, var.equal = TRUE)
+
 ```
 
 # Step 5: Reflection
 
 Were you able to reproduce the results you attempted to reproduce? If not, what part(s) were you unable to reproduce?
 
-> ANSWER HERE
+> I was able to reproduce the results after finally switching to the corrected data (although there are very slight rounding differences from some of the stats).
 
 How difficult was it to reproduce your results? 
 
-> ANSWER HERE
+> It was extremely difficult to reproduce the results because of the data I was using - it was very hard to run the ANOVA because I was using the original raw data, and didn't notice that in the folder there was a corrected set of data (because there were observations originally missing for participant 25 that kept causing errors in the ANOVA which I was able to manually fix, but then caused me to get a different F statistic). It was also difficult to set up the figure/plot to be as similar as possible to the original paper.
 
 What aspects made it difficult? What aspects made it easy?
 
-> ANSWER HERE
+> Using the raw data made it incredibly difficult (as mentioned above with my issues in running the ANOVA), as this led to a lot of debugging issues with the ANOVA and different stats. 
