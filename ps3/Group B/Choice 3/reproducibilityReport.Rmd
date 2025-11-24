@@ -143,7 +143,7 @@ anova_results <- ezANOVA(data = d_tidy,
 anova_results
 
 partial_eta2 <- anova_results$ANOVA
-partial_eta2 <- partial_eta %>% mutate(partial_eta2 = SSn / (SSn + SSd))
+partial_eta2 <- partial_eta2 %>% mutate(partial_eta2 = SSn / (SSn + SSd))
 partial_eta2
 
 ```
@@ -180,4 +180,4 @@ How difficult was it to reproduce your results?
 
 What aspects made it difficult? What aspects made it easy?
 
-> Using the raw data made it incredibly difficult (as mentioned above with my issues in running the ANOVA), as this led to a lot of debugging issues with the ANOVA and different stats. 
+> Using the raw data made it incredibly difficult (as mentioned above with my issues in running the ANOVA), as this led to a lot of debugging issues with the ANOVA and different stats. Documentation on the methods / types of analyses that were run made it easier (along with information like sample size / degrees of freedom).
